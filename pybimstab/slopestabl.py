@@ -107,6 +107,34 @@ slices, seedFS=1, Kh=0, maxIter=50, tol=1e-3,
         self.iterateGLE()
         return
 
+    @staticmethod
+    def anisotropy(c,alpha,adp_factors):
+        from numpy import sin
+        from numpy import radians as rad
+
+        """
+        Method for calculating anisitropic shear strength; 
+        this is done by using the Equation [] of
+        Trimble GeoSuite 2018
+        Args:
+            c (`int` or `float`): cohesion
+            alpha (`int` or `float`): angle of the slice in degrees
+            adp_factors ('dict'): dictionary of adp factors
+        Returns:
+            c (`float`): cohesion corrected for anisotropy
+        """
+        SuD = adp_factors["Ad"]*c
+        SuA = adp_factors["Aa"]*c
+        SuP = adp_factors["Ap"]*c
+        if alpha == 0:
+            c = SuD
+        elif alpha > 0:
+            c = SuD + (SuA-SuD)*sin(2*rad(alpha))
+        elif alpha < 0:
+            c = SuD + (SuP-SuD)*sin(2*rad(alpha)) 
+        return c
+
+
     def intersliceForceFunct(self, v=1, u=1):
         '''
         Method for calculating the interslice function which is a component of
@@ -311,6 +339,8 @@ slices, seedFS=1, Kh=0, maxIter=50, tol=1e-3,
         for slice_ in self.slices.slices:
             # Calculating the normal force 'P' at the base of the slice_.
             c = slice_.material.cohesion
+            if slice_.material.adp_factors != False:
+                c = self.anisotropy(c,slice_.alpha,slice_.material.adp_factors)
             phi = rad(slice_.material.frictAngle)
             if fellenius:
                 P = slice_.weight * cos(rad(slice_.alpha)) - \
@@ -376,7 +406,7 @@ slices, seedFS=1, Kh=0, maxIter=50, tol=1e-3,
             >>>                    stabAnalysis.FS['lambda'])
             (2.0750390044795854, True)
         '''
-        from numpy import tan
+        from numpy import tan, sin
         from numpy import radians as rad
 
         # Doing the iteration
@@ -389,6 +419,8 @@ slices, seedFS=1, Kh=0, maxIter=50, tol=1e-3,
             den1, den2, den3, den4 = 0, 0, 0, 0
             for slice_ in self.slices.slices:
                 c = slice_.material.cohesion
+                if slice_.material.adp_factors != False:
+                    c = self.anisotropy(c,slice_.alpha,slice_.material.adp_factors)
                 phi = rad(slice_.material.frictAngle)
                 num += c * slice_.l * slice_.R + \
                     (slice_.P - slice_.U) * slice_.R * tan(phi)
@@ -470,6 +502,8 @@ slices, seedFS=1, Kh=0, maxIter=50, tol=1e-3,
             den1, den2, den3 = 0, 0, 0
             for slice_ in self.slices.slices:
                 c = slice_.material.cohesion
+                if slice_.material.adp_factors != False:
+                    c = self.anisotropy(c,slice_.alpha,slice_.material.adp_factors)
                 phi = rad(slice_.material.frictAngle)
                 num += c * slice_.width + (slice_.P - slice_.U) * tan(phi) * \
                     cos(rad(slice_.alpha))
@@ -550,6 +584,9 @@ slices, seedFS=1, Kh=0, maxIter=50, tol=1e-3,
         for i in range(self.slices.numSlices):
             slice_ = self.slices.slices[i]
             c = slice_.material.cohesion
+            if slice_.material.adp_factors != False:
+                c = self.anisotropy(c,slice_.alpha,slice_.material.adp_factors)
+ 
             phi = rad(slice_.material.frictAngle)
             Sm = (c * slice_.l + (slice_.P - slice_.U) * tan(phi))/seedFS
             setattr(slice_, 'Sm', Sm)

@@ -41,20 +41,23 @@ class MaterialParameters:
         '''
 
     def __init__(self, cohesion, frictAngle, unitWeight, blocksUnitWeight=None,
-                 wtUnitWeight=None):
+                 wtUnitWeight=None,adp_factors=False):
         '''
         MaterialParameters(cohesion, frictAngle, unitWeight,
-                           blocksUnitWeight=None, wtUnitWeight=None)
+                           blocksUnitWeight=None, wtUnitWeight=None,adp_factors=False)
         '''
         self.cohesion = cohesion
         self.frictAngle = frictAngle
         self.unitWeight = unitWeight
         self.blocksUnitWeight = blocksUnitWeight
         self.wtUnitWeight = wtUnitWeight
+        self.adp_factors = adp_factors
         if blocksUnitWeight is None:
             self.blocksUnitWeight = 0
         if wtUnitWeight is None:
             self.wtUnitWeight = 0
+
+        
 
 
 # %%
